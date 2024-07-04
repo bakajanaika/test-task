@@ -4,9 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import test.task.exception.CouponNotFoundException;
-import test.task.exception.ProductNotFoundException;
-import test.task.exception.TaxNumberValidateException;
+import test.task.exception.*;
 
 import java.util.Map;
 
@@ -24,6 +22,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TaxNumberValidateException.class)
     ResponseEntity<?> handleTaxNumberValidate(TaxNumberValidateException e) {
+        return this.create(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedPaymentProcessor.class)
+    ResponseEntity<?> handleUnsupportedPaymentProcessor(UnsupportedPaymentProcessor e) {
+        return this.create(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(PaypalPaymentException.class)
+    ResponseEntity<?> handleUnsupportedPaypalProcessor(PaypalPaymentException e) {
         return this.create(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

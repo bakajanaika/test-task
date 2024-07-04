@@ -4,14 +4,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
-import test.task.exception.CouponNotFoundException;
-import test.task.exception.ProductNotFoundException;
-import test.task.exception.TaxNumberValidateException;
-import test.task.models.entity.CouponEntity;
+import test.task.exception.*;
 import test.task.models.entity.ProductEntity;
+import test.task.models.enums.PaymentProcessor;
 import test.task.models.enums.TaxCountry;
 import test.task.models.requests.PurchaseRequest;
 import test.task.models.responses.CalculateResponse;
+import test.task.processors.PaypalPaymentProcessor;
+import test.task.processors.StripePaymentProcessor;
 import test.task.repository.CouponEntityRepository;
 import test.task.repository.ProductEntityRepository;
 import test.task.services.PurchaseService;
@@ -26,15 +26,25 @@ public class PurchaseServiceImpl implements PurchaseService {
     CouponEntityRepository couponEntityRepository;
     ProductEntityRepository productEntityRepository;
 
-    public CalculateResponse purchase(PurchaseRequest request) {
-        ProductEntity product = this.validateAndGetProduct(request.getProductId());
-        CouponEntity coupon;
-        if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
-            coupon = this.validateAndGetCoupon(request.getCouponCode());
-        }
-        Double tax = this.validateAndGetTaxNumber(request.getTaxNumber());
+    PaypalPaymentProcessor paypalPaymentProcessor;
+    StripePaymentProcessor stripePaymentProcessor;
 
-        return null;
+    public CalculateResponse purchase(PurchaseRequest request) {
+
+        ProductEntity product = this.validateAndGetProduct(request.getProductId());
+        if (!this.processPayment(product.getPrice(), request.getPaymentProcessor())) {
+            throw new PaypalPaymentException();
+        }
+        Double discount = 0.0;
+        if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
+            discount = this.validateAndGetCoupon(request.getCouponCode());
+        }
+
+        Double tax = this.validateAndGetTaxNumber(request.getTaxNumber());
+        Double sum = product.getPrice() - discount * tax;
+        Double taxSum = product.getPrice() - discount - (product.getPrice() - discount * tax);
+
+        return new CalculateResponse(sum, discount, taxSum);
     }
 
     public double validateAndGetTaxNumber(String taxNumber) {
@@ -51,8 +61,18 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .orElseThrow(() -> new ProductNotFoundException(id.toString()));
     }
 
-    public CouponEntity validateAndGetCoupon(String code) {
-        return couponEntityRepository.findByCode(code)
-                .orElseThrow(() -> new CouponNotFoundException(code));
+    public Double validateAndGetCoupon(String code) {
+        return Double.valueOf(couponEntityRepository.findByCode(code)
+                .orElseThrow(() -> new CouponNotFoundException(code)).getCode().substring(0, 1));
+    }
+
+
+    private boolean processPayment(Double amount, PaymentProcessor processor) {
+        if (processor.equals(PaymentProcessor.PAYPAL)) {
+            paypalPaymentProcessor.makePayment(amount.intValue());
+        } else if (processor.equals(PaymentProcessor.STRIPE)) {
+            return stripePaymentProcessor.pay(amount.floatValue());
+        }
+        throw new UnsupportedPaymentProcessor("Unsupported payment processor");
     }
 }
