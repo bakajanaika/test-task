@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: test-task
+  datasource:
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgre}
+    url: ${DB_URL:localhost:5432/postgres}
+  jpa:
+    show-sql: ${SHOW_SQL:true}
+
+  flyway:
+    user: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgre}
+    schemas: ${SCHEMA:public}
+    baseline-on-migrate: true
+    validate-migration-naming: true
+    locations: db.migration
+
