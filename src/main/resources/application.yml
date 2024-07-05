@@ -3,8 +3,8 @@ spring:
     name: test-task
   datasource:
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgre}
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    password: ${DB_PASSWORD:password}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/test}
     driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: ${SHOW_SQL:true}
@@ -17,9 +17,15 @@ spring:
 
   flyway:
     user: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgre}
+    password: ${DB_PASSWORD:password}
     schemas: ${SCHEMA:public}
     baseline-on-migrate: true
     validate-migration-naming: true
     locations: db.migration
+
+springdoc:
+  api-docs:
+    path: /api/swagger/test/v3/api-docs
+  swagger-ui:
+    path: /api/swagger/test/swagger-ui.html
 
