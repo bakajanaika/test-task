@@ -1,4 +1,4 @@
-CREATE TABLE coupon
+CREATE TABLE IF NOT EXISTS coupon
 (
     id   UUID NOT NULL primary key default uuid_generate_v4(),
     code VARCHAR(255) unique
