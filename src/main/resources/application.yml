@@ -4,9 +4,16 @@ spring:
   datasource:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgre}
-    url: ${DB_URL:localhost:5432/postgres}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        ddl-auto: validate
+        default_schema: public
 
   flyway:
     user: ${DB_USERNAME:postgres}

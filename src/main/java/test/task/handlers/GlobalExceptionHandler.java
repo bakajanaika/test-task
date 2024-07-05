@@ -35,6 +35,11 @@ public class GlobalExceptionHandler {
         return this.create(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(InvalidCouponCode.class)
+    ResponseEntity<?> handleInvalidCouponCOde(InvalidCouponCode e) {
+        return this.create(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     private ResponseEntity<?> create(HttpStatus status, String message) {
         return ResponseEntity
                 .status(status)

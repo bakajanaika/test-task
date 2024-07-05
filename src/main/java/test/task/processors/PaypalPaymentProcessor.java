@@ -6,9 +6,9 @@ import test.task.exception.PaypalPaymentException;
 @Component
 public class PaypalPaymentProcessor {
 
-    public void makePayment(Integer amount) {
+    public boolean makePayment(Integer amount) {
         if (amount > 100000) {
             throw new PaypalPaymentException();
-        }
+        } else return true;
     }
 }

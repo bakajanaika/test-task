@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import test.task.exception.*;
 import test.task.models.entity.ProductEntity;
+import test.task.models.enums.CouponCodes;
 import test.task.models.enums.PaymentProcessor;
 import test.task.models.enums.TaxCountry;
 import test.task.models.requests.PurchaseRequest;
@@ -29,15 +30,16 @@ public class PurchaseServiceImpl implements PurchaseService {
     PaypalPaymentProcessor paypalPaymentProcessor;
     StripePaymentProcessor stripePaymentProcessor;
 
+    @Override
     public CalculateResponse purchase(PurchaseRequest request) {
 
         ProductEntity product = this.validateAndGetProduct(request.getProductId());
         if (!this.processPayment(product.getPrice(), request.getPaymentProcessor())) {
-            throw new PaypalPaymentException();
+            throw new UnsupportedPaymentProcessor("Unsupported payment processor");
         }
         Double discount = 0.0;
         if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
-            discount = this.validateAndGetCoupon(request.getCouponCode());
+            discount = this.validateAndGetCoupon(request.getCouponCode(), product.getPrice());
         }
 
         Double tax = this.validateAndGetTaxNumber(request.getTaxNumber());
@@ -61,15 +63,22 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .orElseThrow(() -> new ProductNotFoundException(id.toString()));
     }
 
-    public Double validateAndGetCoupon(String code) {
-        return Double.valueOf(couponEntityRepository.findByCode(code)
-                .orElseThrow(() -> new CouponNotFoundException(code)).getCode().substring(0, 1));
+    public Double validateAndGetCoupon(String code, Double sum) {
+        Double coupon = Double.valueOf(couponEntityRepository.findByCode(code)
+                .orElseThrow(() -> new CouponNotFoundException(code)).getCode().replaceAll("P, S", ""));
+        if (code.startsWith(CouponCodes.P.getDescription())) {
+            return sum * coupon / 100;
+        } else if (code.startsWith(CouponCodes.S.getDescription())) {
+            return coupon;
+        } else {
+            throw new InvalidCouponCode();
+        }
     }
 
 
     private boolean processPayment(Double amount, PaymentProcessor processor) {
         if (processor.equals(PaymentProcessor.PAYPAL)) {
-            paypalPaymentProcessor.makePayment(amount.intValue());
+            return paypalPaymentProcessor.makePayment(amount.intValue());
         } else if (processor.equals(PaymentProcessor.STRIPE)) {
             return stripePaymentProcessor.pay(amount.floatValue());
         }
